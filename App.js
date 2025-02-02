@@ -2,8 +2,8 @@ import { useEffect, useState } from 'react';
 import { Button, StyleSheet, Text, TextInput, View } from 'react-native';
 
 const MAX_NUMBER = 50;
-const EASY_TIME = 10;
-const HARD_TIME = 5;
+const EASY_TIME = 30;
+const HARD_TIME = 15;
 
 const rndNumber = () => Math.floor(Math.random() * MAX_NUMBER);
 
@@ -18,7 +18,9 @@ export default function App() {
   const [msg, setMsg] = useState('');
   const [timeLeft, setTimeLeft] = useState(EASY_TIME);
   const [btnEnabled, setBtnEnabled] = useState(true);
-  const [difficulty, setDifficulty] = useState('easy'); // Default mode
+  const [difficulty, setDifficulty] = useState('easy');
+  const [score, setScore] = useState(0);
+  const [highScore, setHighScore] = useState(0);
 
   useEffect(() => {
     calculateSolution();
@@ -32,7 +34,10 @@ export default function App() {
   useEffect(() => {
     if (timeLeft === 0) {
       setBtnEnabled(false);
-      setMsg(`⏰ Temps écoulé ! La bonne réponse était ${solution} ❗`);
+      setMsg(`⏰ Temps écoulé ! Votre score final est ${score} ❗`);
+      if (score > highScore) {
+        setHighScore(score);
+      }
     }
   }, [timeLeft]);
 
@@ -51,34 +56,42 @@ export default function App() {
   const handleSubmit = () => {
     if (parseInt(userAnswer) === solution) {
       setMsg('✅ Bonne réponse ! 🎉');
+      setScore((prevScore) => prevScore + 1);
     } else {
       setMsg(`❌ Mauvaise réponse ! La bonne réponse était ${solution} 🤓`);
     }
+    generateNewQuestion(); // Génère automatiquement un nouveau calcul
   };
 
-  const startNewGame = () => {
+  const generateNewQuestion = () => {
     setNumberOne(rndNumber());
     setNumberTwo(rndNumber());
     if (difficulty === 'hard') {
       setNumberThree(rndNumber());
-      setTimeLeft(HARD_TIME);
     } else {
       setNumberThree(null);
-      setTimeLeft(EASY_TIME);
     }
     setUserAnswer('');
+  };
+
+  const startNewGame = () => {
+    setScore(0);
+    setTimeLeft(difficulty === 'hard' ? HARD_TIME : EASY_TIME);
     setMsg('');
     setBtnEnabled(true);
+    generateNewQuestion();
   };
 
   const handleDifficultyChange = (level) => {
     setDifficulty(level);
+    setTimeLeft(level === 'hard' ? HARD_TIME : EASY_TIME);
     startNewGame();
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.timer}>{formatTime(timeLeft)}</Text>
+      <Text style={styles.score}>Score: {score} | 🏆 Record: {highScore}</Text>
       <View style={styles.buttonRow}>
         <Button title="New Game 🔄" onPress={startNewGame} />
         <Button title="Easy 😊" onPress={() => handleDifficultyChange('easy')} />
@@ -111,6 +124,11 @@ const styles = StyleSheet.create({
   },
   timer: {
     fontSize: 24,
+    fontWeight: 'bold',
+    marginBottom: 10,
+  },
+  score: {
+    fontSize: 20,
     fontWeight: 'bold',
     marginBottom: 10,
   },
